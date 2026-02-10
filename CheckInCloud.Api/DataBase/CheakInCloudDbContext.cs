@@ -5,7 +5,7 @@ namespace CheckInCloud.Api.DataBase
 {
     public class CheakInCloudDbContext(DbContextOptions<CheakInCloudDbContext> options) : DbContext(options)
     {
-        DbSet<Country> countries { get; set; }
-        DbSet<Hotel> hotels { get; set; }
+       public DbSet<Country> Countries { get; set; }
+       public DbSet<Hotel> Hotels { get; set; }
     }
 }
