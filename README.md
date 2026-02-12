@@ -1,18 +1,18 @@
-# CheckInCloud 🏨☁️
+# CheckInCloud 
 
 CheckInCloud is a modern, scalable **ASP.NET Core Web API** designed to manage hotel listings and their associated countries.  
 The project follows **clean architecture principles** and implements advanced backend patterns to ensure **maintainability, security, and performance**.
 
 ---
 
-## 📌 Project Overview
+##  Project Overview
 
 This API serves as a backend directory for managing hotel listings and country data.  
 It leverages industry-standard architectural patterns to ensure **separation of concerns**, **data integrity**, and **secure access**.
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 ### 🔹 RESTful Architecture
 - Fully compliant with REST principles  
