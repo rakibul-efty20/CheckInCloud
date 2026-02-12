@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CheckInCloud.Api.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CheckInCloud.Api.Data;
 using CheckInCloud.Api.DataBase;
@@ -10,23 +11,21 @@ namespace CheckInCloud.Api.Controllers
     [ApiController]
     public class HotelsController : ControllerBase
     {
-        private readonly CheakInCloudDbContext _context;
+        private readonly IHotelsService _hotelsService;
 
-        public HotelsController(CheakInCloudDbContext context)
+
+        public HotelsController(IHotelsService hotelsService)
         {
-            _context = context;
+            _hotelsService = hotelsService;
         }
           
 
         // GET: api/Hotels
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GetHotelsDTO>>> GetHotels()
+        public async Task<ActionResult<IEnumerable<GetHotelDTO>>> GetHotels()
         {
-            //Select * FROM Hotels LEFT JOIN Countries ON Hotels.CountryId = Countries.Id
-            var hotels = await _context.Hotels
-                .Select(h => new GetHotelsDTO(h.Id, h.Name, h.Address, h.Rating, h.CountryId))
-                .ToListAsync();
-
+            var hotels = await _hotelsService.GetHotelsAsync();
+        
             return Ok(hotels);
         } 
 
@@ -34,16 +33,7 @@ namespace CheckInCloud.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GetHotelDTO>> GetHotel(int id)
         {
-            var hotel = await _context.Hotels
-                .Where(h => h.Id ==id)
-                .Select(h => new GetHotelDTO(
-                    h.Id,
-                    h.Name,
-                    h.Address,
-                    h.Rating,
-                    h.Country!.Name
-                    ))
-                .FirstOrDefaultAsync();
+            var hotel = await _hotelsService.GetHotelAsync(id);
 
             if (hotel == null)
             {
@@ -56,32 +46,22 @@ namespace CheckInCloud.Api.Controllers
         // PUT: api/Hotels/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutHotel(int id, UpdateHotelDTO hotelDto)
+        public async Task<IActionResult> PutHotel(int id, UpdateHotelDTO updateHotelDto)
         {
-            if (id != hotelDto.Id)
+            if (id != updateHotelDto.Id)
             {
                 return BadRequest();
             }
-            var hotel = await _context.Hotels.FindAsync(id);
-            if (hotel == null)
-            {
-                return NotFound();
-            }
 
-            hotel.Name = hotelDto.Name;
-            hotel.Address = hotelDto.Address;
-            hotel.Rating = hotelDto.Rating;
-            hotel.CountryId = hotelDto.CountryId;
-
-            _context.Entry(hotel).State = EntityState.Modified;
+            
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _hotelsService.UpdateHotelAsync(id, updateHotelDto);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await HotelExists(id))
+                if (! await _hotelsService.HotelExistsAsync(id))
                 {
                     return NotFound();
                 }
@@ -97,17 +77,9 @@ namespace CheckInCloud.Api.Controllers
         // POST: api/Hotels
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Hotel>> PostHotel(CreateHotelDTO hotelDto)
+        public async Task<ActionResult<Hotel>> PostHotel(CreateHotelDTO createHotelDto)
         {
-            var hotel = new Hotel()
-            {
-                Name = hotelDto.Name,
-                Address = hotelDto.Address,
-                Rating = hotelDto.Rating,
-                CountryId = hotelDto.CountryId
-            };
-            _context.Hotels.Add(hotel);
-            await _context.SaveChangesAsync();
+           var hotel = await _hotelsService.CreateHotelAsync(createHotelDto);
 
             return CreatedAtAction("GetHotel", new { id = hotel.Id }, hotel);
         }
@@ -116,21 +88,9 @@ namespace CheckInCloud.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteHotel(int id)
         {
-            var hotel = await _context.Hotels.FindAsync(id);
-            if (hotel == null)
-            {
-                return NotFound();
-            }
-
-            _context.Hotels.Remove(hotel);
-            await _context.SaveChangesAsync();
+            await _hotelsService.DeleteHotelAsync(id);
 
             return NoContent();
-        }
-
-        private async Task<bool> HotelExists(int id)
-        {
-            return await  _context.Hotels.AnyAsync(e => e.Id == id);
         }
     }
 }

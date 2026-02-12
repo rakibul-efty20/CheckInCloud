@@ -1,4 +1,6 @@
+using CheckInCloud.Api.Contracts;
 using CheckInCloud.Api.DataBase;
+using CheckInCloud.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -11,6 +13,8 @@ builder.Services.AddDbContext<CheakInCloudDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")); // DefaultConnection from appsettings.json
 });
 
+builder.Services.AddScoped<ICountriesService, CountriesService>();
+builder.Services.AddScoped<IHotelsService, HotelsService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(opt =>

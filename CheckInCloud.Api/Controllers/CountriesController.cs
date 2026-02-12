@@ -1,10 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CheckInCloud.Api.Data;
-using CheckInCloud.Api.DataBase;
+﻿using CheckInCloud.Api.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using CheckInCloud.Api.DTOs.Country;
-using CheckInCloud.Api.DTOs.Hotel;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace CheckInCloud.Api.Controllers
 {
@@ -12,24 +8,19 @@ namespace CheckInCloud.Api.Controllers
     [ApiController]
     public class CountriesController : ControllerBase
     {
-        private readonly CheakInCloudDbContext _context;
+        private readonly ICountriesService _countriesService;
 
-        public CountriesController(CheakInCloudDbContext context)
+
+        public CountriesController(ICountriesService countriesService)
         {
-            _context = context;
+            _countriesService = countriesService;
         }
 
         // GET: api/Countries
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCountriesDTO>>> Getcountries()
         {
-            var countries = await _context.Countries
-                .Select(c => new GetCountriesDTO(
-                    c.CountryId,
-                    c.Name,
-                    c.ShortName
-                    ))
-                .ToListAsync();
+            var countries = await _countriesService.GetCountriesAsync();
           
             return Ok(countries);
         }
@@ -38,20 +29,7 @@ namespace CheckInCloud.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GetCountryDTO>> GetCountry(int id)
         {
-            var country = await _context.Countries
-                .Where(q => q.CountryId == id)
-                .Select(c => new GetCountryDTO(
-                    c.CountryId,
-                    c.Name,
-                    c.ShortName,
-                    c.Hotels.Select(h => new GetHotelSlimDTO(
-                        h.Id,
-                        h.Name,
-                        h.Address,
-                        h.Rating
-                        )).ToList()
-                    ))
-                .FirstOrDefaultAsync();
+            var country = await _countriesService.GetCountryAsync(id);
 
             if (country == null)
             {
@@ -70,32 +48,8 @@ namespace CheckInCloud.Api.Controllers
             {
                 return BadRequest();
             }
-            var country = await _context.Countries.FindAsync(id);
-            if (country == null)
-            {
-                return NotFound();
-            }
-            country.Name = updateCountryDto.Name;
-            country.ShortName = updateCountryDto.ShortName;
-
-
-            _context.Entry(country).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (! await CountryExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            //update the country
+            await _countriesService.UpdateCountryAsync(id, updateCountryDto);
 
             return NoContent();
         }
@@ -103,48 +57,24 @@ namespace CheckInCloud.Api.Controllers
         // POST: api/Countries
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<GetCountryDTO>> PostCountry(CreateCountryDTO createCountryDtocountry)
+        public async Task<ActionResult<GetCountryDTO>> PostCountry(CreateCountryDTO createCountryDto)
         {
-            var country = new Country
-            {
-                Name = createCountryDtocountry.Name,
-                ShortName = createCountryDtocountry.ShortName
-            };
+            //create the country
 
-            _context.Countries.Add(country);
-            await _context.SaveChangesAsync();
+            var resultDto = await _countriesService.CreateCountryAsync(createCountryDto);
 
-            var resultDto = new GetCountryDTO(
-                country.CountryId,
-                country.Name,
-                country.ShortName,
-                null
-            );
-
-          
-
-            return CreatedAtAction("GetCountry", new { id = country.CountryId },resultDto);
+            return CreatedAtAction("GetCountry", new { id = resultDto.CountryId },resultDto);
         }
 
         // DELETE: api/Countries/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCountry(int id)
         {
-            var country = await _context.Countries.FindAsync(id);
-            if (country == null)
-            {
-                return NotFound();
-            }
-
-            _context.Countries.Remove(country);
-            await _context.SaveChangesAsync();
+            //delete the country
+            await _countriesService.DeleteCountryAsync(id);
 
             return NoContent();
         }
-
-        private async Task<bool> CountryExists(int id)
-        {
-            return await _context.Countries.AnyAsync(e => e.CountryId == id);
-        }
+       
     }
 }
