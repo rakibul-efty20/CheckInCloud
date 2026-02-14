@@ -1,14 +1,15 @@
 ﻿using CheckInCloud.Api.DTOs.Country;
+using CheckInCloud.Api.Results;
 
 namespace CheckInCloud.Api.Contracts;
 
 public interface ICountriesService
 {
-    Task<IEnumerable<GetCountriesDTO>> GetCountriesAsync();
-    Task<GetCountryDTO> GetCountryAsync(int id);
-    Task<GetCountryDTO> CreateCountryAsync(CreateCountryDTO createCountryDto);
-    Task UpdateCountryAsync(int id, UpdateCountryDTO updateCountryDto);
-    Task DeleteCountryAsync(int id);
+    Task<Result<IEnumerable<GetCountriesDTO>>> GetCountriesAsync();
+    Task<Result<GetCountryDTO>> GetCountryAsync(int id);
+    Task<Result<GetCountryDTO>> CreateCountryAsync(CreateCountryDTO createCountryDto);
+    Task<Result> UpdateCountryAsync(int id, UpdateCountryDTO updateCountryDto);
+    Task<Result> DeleteCountryAsync(int id);
     Task<bool> CountryExistsAsync(int id);
     Task<bool> CountryExistsAsync(string name);
 }

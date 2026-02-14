@@ -1,14 +1,15 @@
 ﻿using CheckInCloud.Api.DTOs.Hotel;
-
-namespace CheckInCloud.Api.Contracts;
+using CheckInCloud.Api.Results;
+namespace HotelListing.Api.Contracts;
 
 public interface IHotelsService
 {
-    Task<IEnumerable<GetHotelDTO>> GetHotelsAsync();
-    Task<GetHotelDTO> GetHotelAsync(int id);
-    Task<GetHotelDTO> CreateHotelAsync(CreateHotelDTO createHotelDto);
-    Task UpdateHotelAsync(int id, UpdateHotelDTO updateHotelDto);
-    Task DeleteHotelAsync(int id);
+    // Keep these for quick checks elsewhere if needed
     Task<bool> HotelExistsAsync(int id);
-    Task<bool> HotelExistsAsync(string name);
+    Task<bool> HotelExistsAsync(string name, int countryId);
+    Task<Result<IEnumerable<GetHotelDTO>>> GetHotelsAsync();
+    Task<Result<GetHotelDTO>> GetHotelAsync(int id);
+    Task<Result<GetHotelDTO>> CreateHotelAsync(CreateHotelDTO createDto);
+    Task<Result> UpdateHotelAsync(int id, UpdateHotelDTO updateDto);
+    Task<Result> DeleteHotelAsync(int id);
 }

@@ -1,6 +1,8 @@
 using CheckInCloud.Api.Contracts;
 using CheckInCloud.Api.DataBase;
+using CheckInCloud.Api.MappingProfiles;
 using CheckInCloud.Api.Services;
+using HotelListing.Api.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -15,6 +17,11 @@ builder.Services.AddDbContext<CheakInCloudDbContext>(options =>
 
 builder.Services.AddScoped<ICountriesService, CountriesService>();
 builder.Services.AddScoped<IHotelsService, HotelsService>();
+
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<MappingProfile>();
+});
 
 builder.Services.AddControllers()
     .AddJsonOptions(opt =>

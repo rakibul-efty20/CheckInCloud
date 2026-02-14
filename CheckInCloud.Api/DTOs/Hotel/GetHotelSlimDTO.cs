@@ -1,10 +1,8 @@
 ﻿namespace CheckInCloud.Api.DTOs.Hotel;
 
-public record GetHotelDTO(
+public record GetHotelSlimDTO(
     int Id,
     string Name,
     string Address,
-    double Rating,
-    int CountryId,
-    string Country
+    double Rating
 );

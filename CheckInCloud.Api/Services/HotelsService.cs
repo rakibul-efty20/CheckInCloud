@@ -1,15 +1,21 @@
-﻿using CheckInCloud.Api.Contracts;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using CheckInCloud.Api.Constants;
+using CheckInCloud.Api.Contracts;
 using CheckInCloud.Api.Data;
 using CheckInCloud.Api.DataBase;
 using CheckInCloud.Api.DTOs.Hotel;
-using CheckInCloud.Api.DTOs.Hotel;
+using CheckInCloud.Api.Results;
+using HotelListing.Api.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace CheckInCloud.Api.Services
 {
-    public class HotelsService(CheakInCloudDbContext _context) : IHotelsService
+    public class HotelsService(CheakInCloudDbContext _context,
+        ICountriesService countriesService,
+        IMapper mapper) : IHotelsService
     {
-        public async Task<IEnumerable<GetHotelDTO>> GetHotelsAsync()
+        public async Task<Result<IEnumerable<GetHotelDTO>>> GetHotelsAsync()
         {
             //Select * FROM Hotels LEFT JOIN Countries ON Hotels.CountryId = Countries.Id
             var hotels = await _context.Hotels
@@ -18,35 +24,47 @@ namespace CheckInCloud.Api.Services
                 .ToListAsync();
 
 
-            return hotels;
+            return Result<IEnumerable<GetHotelDTO>>.Success(hotels);
         }
 
-        public async Task<GetHotelDTO> GetHotelAsync(int id)
+        public async Task<Result<GetHotelDTO>> GetHotelAsync(int id)
         {
             var hotel = await _context.Hotels
                 .Where(h => h.Id == id)
-                .Select(h => new GetHotelDTO(
-                    h.Id,
-                    h.Name,
-                    h.Address,
-                    h.Rating,
-                    h.CountryId,
-                    h.Country!.Name
-                ))
+                .Include(q =>q.Country)
+                .ProjectTo<GetHotelDTO>(mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
 
-            return hotel ?? null;
+            if (hotel is null)
+            {
+                return Result<GetHotelDTO>.Failure(new Error(ErrorCodes.NotFound, $"Hotel '{id}' was not found."));
+            }
+
+            return Result<GetHotelDTO>.Success(hotel);
         }
 
-        public async Task<GetHotelDTO> CreateHotelAsync(CreateHotelDTO createHotelDto)
+        public async Task<Result<GetHotelDTO>> CreateHotelAsync(CreateHotelDTO createHotelDto)
         {
-            var hotel = new Hotel()
+            //var hotel = new Hotel()
+            //{
+            //    Name = createHotelDto.Name,
+            //    Address = createHotelDto.Address,
+            //    Rating = createHotelDto.Rating,
+            //    CountryId = createHotelDto.CountryId
+            //};
+
+            var countryExists = await countriesService.CountryExistsAsync(createHotelDto.CountryId);
+            if (!countryExists)
             {
-                Name = createHotelDto.Name,
-                Address = createHotelDto.Address,
-                Rating = createHotelDto.Rating,
-                CountryId = createHotelDto.CountryId
-            };
+                return Result<GetHotelDTO>.Failure(new Error(ErrorCodes.NotFound, $"Country '{createHotelDto.CountryId}' was not found."));
+            }
+            var duplicateHotel = await HotelExistsAsync(createHotelDto.Name,createHotelDto.CountryId);
+            if (duplicateHotel)
+            {
+                return Result<GetHotelDTO>.Failure(new Error(ErrorCodes.Conflict, $"Hotel with name '{createHotelDto.Name}' already exists in the specified country."));
+            }
+
+            var hotel = mapper.Map<Hotel>(createHotelDto);
             _context.Hotels.Add(hotel);
             await _context.SaveChangesAsync();
 
@@ -59,30 +77,49 @@ namespace CheckInCloud.Api.Services
                 string.Empty
             );
 
-            return resultDto;
+            return Result<GetHotelDTO>.Success(resultDto);
         }
 
-        public async Task UpdateHotelAsync(int id, UpdateHotelDTO updateHotelDto)
+        public async Task<Result> UpdateHotelAsync(int id, UpdateHotelDTO updateHotelDto)
         {
-            var hotel = await _context.Hotels.FindAsync(id) ?? throw new KeyNotFoundException("Hotel not found");
+            if (id != updateHotelDto.Id)
+            {
+                return Result.BadRequest(new Error(ErrorCodes.Validation, "Id route value does not match payload Id."));
+            }
+
+            var hotel = await _context.Hotels.FindAsync(id);
+            if (hotel is null)
+            {
+                return Result.NotFound(new Error(ErrorCodes.NotFound, $"Hotel '{id}' was not found."));
+            }
+            var countryExists = await countriesService.CountryExistsAsync(updateHotelDto.CountryId);
+            if (!countryExists)
+            {
+                return Result.NotFound(new Error(ErrorCodes.NotFound, $"Country '{updateHotelDto.CountryId}' was not found."));
+            }
 
 
-            hotel.Name = updateHotelDto.Name;
-            hotel.Address = updateHotelDto.Address;
-            hotel.Rating = updateHotelDto.Rating;
-            hotel.CountryId = updateHotelDto.CountryId;
 
-            _context.Entry(hotel).State = EntityState.Modified;
+            mapper.Map(updateHotelDto, hotel);
 
             _context.Hotels.Update(hotel);
             await _context.SaveChangesAsync();
+
+            return Result.Success();
         }
 
-        public async Task DeleteHotelAsync(int id)
+        public async Task<Result> DeleteHotelAsync(int id)
         {
-            var Hotel = await _context.Hotels
-                .Where(h => h.Id == id)
+            var affected = await _context.Hotels
+                .Where(q => q.Id == id)
                 .ExecuteDeleteAsync();
+
+            if (affected == 0)
+            {
+                return Result.NotFound(new Error(ErrorCodes.NotFound, $"Hotel '{id}' was not found."));
+            }
+
+            return Result.Success();
 
         }
 
@@ -91,9 +128,10 @@ namespace CheckInCloud.Api.Services
             return await _context.Hotels.AnyAsync(e => e.Id == id);
         }
 
-        public async Task<bool> HotelExistsAsync(string name)
+        public async Task<bool> HotelExistsAsync(string name, int countryId)
         {
-            return await _context.Hotels.AnyAsync(e => e.Name == name);
+            return await _context.Hotels
+                .AnyAsync(e => e.Name.ToLower().Trim() == name.ToLower().Trim() && e.CountryId == countryId);
         }
     }
 }

@@ -1,15 +1,16 @@
 ﻿using CheckInCloud.Api.Contracts;
+using CheckInCloud.Api.Data;
+using CheckInCloud.Api.DTOs.Hotel;
+using CheckInCloud.Api.Services;
+using HotelListing.Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CheckInCloud.Api.Data;
-using CheckInCloud.Api.DataBase;
-using CheckInCloud.Api.DTOs.Hotel;
 
 namespace CheckInCloud.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class HotelsController : ControllerBase
+    public class HotelsController : BaseApiController
     {
         private readonly IHotelsService _hotelsService;
 
@@ -26,7 +27,7 @@ namespace CheckInCloud.Api.Controllers
         {
             var hotels = await _hotelsService.GetHotelsAsync();
         
-            return Ok(hotels);
+            return ToActionResult(hotels);
         } 
 
         // GET: api/Hotels/5
@@ -35,12 +36,8 @@ namespace CheckInCloud.Api.Controllers
         {
             var hotel = await _hotelsService.GetHotelAsync(id);
 
-            if (hotel == null)
-            {
-                return NotFound();
-            }
-
-            return hotel;
+           
+            return ToActionResult(hotel);
         }
 
         // PUT: api/Hotels/5
@@ -50,28 +47,11 @@ namespace CheckInCloud.Api.Controllers
         {
             if (id != updateHotelDto.Id)
             {
-                return BadRequest();
+                return BadRequest("Id route value must match payload Id.");
             }
 
-            
-
-            try
-            {
-                await _hotelsService.UpdateHotelAsync(id, updateHotelDto);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (! await _hotelsService.HotelExistsAsync(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            var result = await _hotelsService.UpdateHotelAsync(id, updateHotelDto);
+            return ToActionResult(result);
         }
 
         // POST: api/Hotels
@@ -80,17 +60,17 @@ namespace CheckInCloud.Api.Controllers
         public async Task<ActionResult<Hotel>> PostHotel(CreateHotelDTO createHotelDto)
         {
            var hotel = await _hotelsService.CreateHotelAsync(createHotelDto);
+           if (!hotel.IsSuccess) return MapErrorsToResponse(hotel.Errors);
 
-            return CreatedAtAction("GetHotel", new { id = hotel.Id }, hotel);
+           return CreatedAtAction(nameof(GetHotel), new { id = hotel.Value!.Id }, hotel.Value); 
         }
 
         // DELETE: api/Hotels/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteHotel(int id)
         {
-            await _hotelsService.DeleteHotelAsync(id);
-
-            return NoContent();
+            var result = await _hotelsService.DeleteHotelAsync(id);
+            return ToActionResult(result);
         }
     }
 }

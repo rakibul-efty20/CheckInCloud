@@ -6,7 +6,7 @@ namespace CheckInCloud.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CountriesController : ControllerBase
+    public class CountriesController : BaseApiController
     {
         private readonly ICountriesService _countriesService;
 
@@ -21,8 +21,8 @@ namespace CheckInCloud.Api.Controllers
         public async Task<ActionResult<IEnumerable<GetCountriesDTO>>> Getcountries()
         {
             var countries = await _countriesService.GetCountriesAsync();
-          
-            return Ok(countries);
+
+            return ToActionResult(countries);
         }
 
         // GET: api/Countries/5
@@ -31,12 +31,7 @@ namespace CheckInCloud.Api.Controllers
         {
             var country = await _countriesService.GetCountryAsync(id);
 
-            if (country == null)
-            {
-                return NotFound();
-            }
-
-            return country;
+            return ToActionResult(country);
         }
 
         // PUT: api/Countries/5
@@ -44,14 +39,10 @@ namespace CheckInCloud.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCountry(int id, UpdateCountryDTO  updateCountryDto)
         {
-            if (id != updateCountryDto.CountryId)
-            {
-                return BadRequest();
-            }
             //update the country
-            await _countriesService.UpdateCountryAsync(id, updateCountryDto);
+           var result = await _countriesService.UpdateCountryAsync(id, updateCountryDto);
 
-            return NoContent();
+            return ToActionResult(result);
         }
 
         // POST: api/Countries
@@ -61,9 +52,11 @@ namespace CheckInCloud.Api.Controllers
         {
             //create the country
 
-            var resultDto = await _countriesService.CreateCountryAsync(createCountryDto);
+            var result = await _countriesService.CreateCountryAsync(createCountryDto);
 
-            return CreatedAtAction("GetCountry", new { id = resultDto.CountryId },resultDto);
+            if(!result.IsSuccess) return MapErrorsToResponse(result.Errors);
+
+            return CreatedAtAction(nameof(GetCountry), new { id = result.Value!.CountryId },result.Value);
         }
 
         // DELETE: api/Countries/5
@@ -71,9 +64,9 @@ namespace CheckInCloud.Api.Controllers
         public async Task<IActionResult> DeleteCountry(int id)
         {
             //delete the country
-            await _countriesService.DeleteCountryAsync(id);
+            var result =await _countriesService.DeleteCountryAsync(id);
 
-            return NoContent();
+            return ToActionResult(result);
         }
        
     }
