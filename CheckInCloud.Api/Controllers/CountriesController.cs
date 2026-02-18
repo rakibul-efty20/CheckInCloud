@@ -1,26 +1,20 @@
 ﻿using CheckInCloud.Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using CheckInCloud.Api.DTOs.Country;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CheckInCloud.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CountriesController : BaseApiController
+    [Authorize]
+    public class CountriesController(ICountriesService countriesService) : BaseApiController
     {
-        private readonly ICountriesService _countriesService;
-
-
-        public CountriesController(ICountriesService countriesService)
-        {
-            _countriesService = countriesService;
-        }
-
         // GET: api/Countries
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCountriesDTO>>> Getcountries()
         {
-            var countries = await _countriesService.GetCountriesAsync();
+            var countries = await countriesService.GetCountriesAsync();
 
             return ToActionResult(countries);
         }
@@ -29,7 +23,7 @@ namespace CheckInCloud.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GetCountryDTO>> GetCountry(int id)
         {
-            var country = await _countriesService.GetCountryAsync(id);
+            var country = await countriesService.GetCountryAsync(id);
 
             return ToActionResult(country);
         }
@@ -37,10 +31,11 @@ namespace CheckInCloud.Api.Controllers
         // PUT: api/Countries/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> PutCountry(int id, UpdateCountryDTO  updateCountryDto)
         {
             //update the country
-           var result = await _countriesService.UpdateCountryAsync(id, updateCountryDto);
+           var result = await countriesService.UpdateCountryAsync(id, updateCountryDto);
 
             return ToActionResult(result);
         }
@@ -48,11 +43,12 @@ namespace CheckInCloud.Api.Controllers
         // POST: api/Countries
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<GetCountryDTO>> PostCountry(CreateCountryDTO createCountryDto)
         {
             //create the country
 
-            var result = await _countriesService.CreateCountryAsync(createCountryDto);
+            var result = await countriesService.CreateCountryAsync(createCountryDto);
 
             if(!result.IsSuccess) return MapErrorsToResponse(result.Errors);
 
@@ -61,13 +57,21 @@ namespace CheckInCloud.Api.Controllers
 
         // DELETE: api/Countries/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteCountry(int id)
         {
             //delete the country
-            var result =await _countriesService.DeleteCountryAsync(id);
+            var result =await countriesService.DeleteCountryAsync(id);
 
             return ToActionResult(result);
         }
        
     }
 }
+//administrator
+//admin12@gmail.com
+//Admin@123
+
+//user
+//user12@gmail.com
+//User@123

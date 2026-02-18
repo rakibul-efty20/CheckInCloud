@@ -1,11 +1,21 @@
 ﻿using CheckInCloud.Api.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
-namespace CheckInCloud.Api.DataBase
+namespace CheckInCloud.Api.DataBase;
+
+public class CheakInCloudDbContext(DbContextOptions<CheakInCloudDbContext> options)
+    : IdentityDbContext<ApplicationUser>(options)
 {
-    public class CheakInCloudDbContext(DbContextOptions<CheakInCloudDbContext> options) : DbContext(options)
+    public DbSet<Country> Countries { get; set; }
+    public DbSet<Hotel> Hotels { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-       public DbSet<Country> Countries { get; set; }
-       public DbSet<Hotel> Hotels { get; set; }
+        base.OnModelCreating(builder);
+
+        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 }

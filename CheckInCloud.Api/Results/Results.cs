@@ -19,6 +19,7 @@
         public static Result Failure(params Error[] errors) => new(false, errors);
         public static Result NotFound(params Error[] errors) => new(false, errors);
         public static Result BadRequest(params Error[] errors) => new(false, errors);
+        
 
         public static Result Combine(params Result[] results)
             => results.Any(r => !r.IsSuccess)
@@ -39,7 +40,7 @@
         public static Result<T> Failure(params Error[] errors) => new(false, default, errors);
         public static Result<T> NotFound() => new(false, default, []);
         public static Result<T> BadRequest() => new(false, default, []);
-
+        public static Result<T> BadRequest(params Error[] errors) => new(false, default, errors);
 
         // Functional helpers
         public Result<K> Map<K>(Func<T, K> map)
