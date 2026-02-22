@@ -11,6 +11,8 @@ public class CheakInCloudDbContext(DbContextOptions<CheakInCloudDbContext> optio
 {
     public DbSet<Country> Countries { get; set; }
     public DbSet<Hotel> Hotels { get; set; }
+    public DbSet<HotelAdmin> HotelAdmins { get; set; }
+    public DbSet<Booking> Bookings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

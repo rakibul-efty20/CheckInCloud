@@ -4,6 +4,7 @@ using CheckInCloud.Api.DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CheckInCloud.Api.Migrations
 {
     [DbContext(typeof(CheakInCloudDbContext))]
-    partial class CheakInCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260222174640_AddBookingsTable")]
+    partial class AddBookingsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
